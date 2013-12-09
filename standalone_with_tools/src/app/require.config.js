@@ -12,7 +12,8 @@ require({
         'angular_resource',
         'toaster',
         'shared/components/progressbar/loading/module',
-        'app/bookmarks/module'
+        'app/bookmarks/module',
+        'app/indicadores/module'
       ]
     },
 

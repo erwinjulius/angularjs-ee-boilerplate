@@ -17,7 +17,8 @@ function(progressConfig, menu) {
   //--- @begin: menu items 
   menu.addMenuItem('Home', '');  
   menu.addMenuItem('Boorkmars', 'bookmarks');
-  menu.addMenuItem('About', 'about');  
+  //menu.addMenuItem('About', 'about');
+  menu.addMenuItem('Indicadores', 'indicadores');
   //--- @end: menu items   
 
 }]);

@@ -7,6 +7,7 @@
     
     // app module dependencies
     appModuleDeps: [
+      'indicadores',
       'bookmarks',
       'fend.progressbar.loading', 
       'ngRoute', 

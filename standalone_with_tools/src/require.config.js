@@ -33,6 +33,10 @@ require({
 
     toaster: [
       'vendor/toaster/0.3.0/toaster'
+    ],
+
+    flot: [
+      'vendor/flot/0.8.1/jquery.flot','vendor/flot/0.8.1/jquery.flot.pie','vendor/flot/0.8.1/jquery.flot.resize'
     ]
 
   },
@@ -68,12 +72,54 @@ require({
       deps:['angular_animate']
     },
 
+    'flot': {
+      deps:['jquery']
+    },
 
-    // mock dependency
+    'global': {
+      deps: ['angular']
+    },
+
+    //--- @begin: require config deps
+
+      //--- shared
+
+    'shared/components/progressbar/loading/require.config': {
+      deps: ['global']
+    },
+
+    'shared/components/input/utils/require.config': {
+      deps: ['global']
+    },
+
+    'shared/components/pagination/require.config': {
+      deps: ['global']
+    },
+
+    'shared/components/flot-chart/require.config': {
+      deps: ['global','flot']
+    },
+
+      //--- app
+
+    'app/bookmarks/require.config': {
+      deps: ['global']
+    },
+
+    'app/indicadores/require.config': {
+      deps: ['global']
+    },
+
+    'app/require.config': {
+      deps: ['global']
+    },
+
+    // require mock dependencies
     'require.mock.config': {
       deps: ['global']
     }
-    
+
+    //--- @end: require config deps
 
   }
 
@@ -84,15 +130,16 @@ require({
   console.log('project require.js config');
 
   require([
-    'global',
-    
     'shared/components/progressbar/loading/require.config',
     'shared/components/input/utils/require.config',
     'shared/components/pagination/require.config',
+    'shared/components/flot-chart/require.config',
+
     
     'require.mock.config', // mock config
 
     'app/bookmarks/require.config',
+	  'app/indicadores/require.config',
     'app/require.config'
   ]);
 
