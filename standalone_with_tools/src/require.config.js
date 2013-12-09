@@ -127,7 +127,7 @@ require({
 
 ['require'], function(require) {
 
-  console.log('project require.js config');
+  console.debug('project require.js config');
 
   require([
     'shared/components/progressbar/loading/require.config',
@@ -136,7 +136,7 @@ require({
     'shared/components/flot-chart/require.config',
 
     
-    'require.mock.config', // mock config
+    'require.mock.config', // call require mock config
 
     'app/bookmarks/require.config',
 	  'app/indicadores/require.config',
