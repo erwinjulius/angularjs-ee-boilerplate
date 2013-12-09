@@ -11,7 +11,9 @@ require({
         'angular_route', 
         'angular_resource',
         'toaster',
+
         'shared/components/progressbar/loading/module',
+        
         'app/bookmarks/module'
       ]
     },
@@ -50,6 +52,9 @@ require({
 
     'app/main/start': {
       deps: [ // TODO: review and add app routes and view componentes ref's
+        
+        'shared/mock/load', // mock load helper
+
         'app/main/controller',
         'app/main/routes'     
       ]
@@ -61,8 +66,9 @@ require({
 
 ['require'], function(require) {
 
-  console.log('app require.js config');
+  console.debug('app require.js config');
 
+  // start
   require(['app/main/start']);
 
 });

@@ -68,12 +68,42 @@ require({
       deps:['angular_animate']
     },
 
+    'global': {
+      deps: ['angular']
+    },
 
-    // mock dependency
+    //--- @begin: require config deps
+
+      //--- shared
+
+    'shared/components/progressbar/loading/require.config': {
+      deps: ['global']
+    },
+
+    'shared/components/input/utils/require.config': {
+      deps: ['global']
+    },
+
+    'shared/components/pagination/require.config': {
+      deps: ['global']
+    },
+
+      //--- app
+
+    'app/bookmarks/require.config': {
+      deps: ['global']
+    },
+
+    'app/require.config': {
+      deps: ['global']
+    },
+
+    // require mock dependencies
     'require.mock.config': {
       deps: ['global']
     }
-    
+
+    //--- @end: require config deps
 
   }
 
@@ -81,16 +111,14 @@ require({
 
 ['require'], function(require) {
 
-  console.log('project require.js config');
+  console.debug('project require.js config');
 
   require([
-    'global',
-    
     'shared/components/progressbar/loading/require.config',
     'shared/components/input/utils/require.config',
     'shared/components/pagination/require.config',
     
-    'require.mock.config', // mock config
+    'require.mock.config', // call require mock config
 
     'app/bookmarks/require.config',
     'app/require.config'

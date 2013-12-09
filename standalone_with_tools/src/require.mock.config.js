@@ -31,18 +31,24 @@ require({
       deps: ['angular-mocks']
     },
 
-    //--- in memory database
+    //--- @begin: shared utils
 
-    'app/main/mock/in-memory.db': {
+    'shared/mock/helpers': {
+      deps: ['angular-mocks-backend']
+    },
+
+    'shared/mock/in-memory.db': {
       deps: [
         'angular-mocks-backend',
         'lokijs'
       ]
     },
 
-    //--- @begin: mocks
+    //--- @end: shared utils
 
-    'app/main/mock/allow-pass-jsonp': {
+    //--- @begin: allow pass to server
+
+    'shared/mock/allow-pass-jsonp': {
       deps: ['angular-mocks-backend']
     },
 
@@ -50,11 +56,39 @@ require({
       deps: ['angular-mocks-backend']
     },
 
-    'app/bookmarks/resources/mock': {
-      deps: ['app/main/mock/in-memory.db']
-    }
+    'app/bookmarks/mock/allow-pass': {
+      deps: ['angular-mocks-backend']
+    },
+
+    //--- @end: allow pass to server
+
+    //--- @begin: mocks
+
+    'app/bookmarks/mock/data': {
+      deps: [
+        'shared/mock/in-memory.db',
+        'shared/mock/helpers'
+      ]
+    },
+
+    'app/bookmarks/mock/url-interceptors': {
+      deps: ['app/bookmarks/mock/data']
+    },
 
     //--- @end: mocks
+
+    'shared/mock/load': {
+      deps: [
+        'angular-mocks-backend',
+
+        'shared/mock/allow-pass-jsonp', 
+
+        //'app/bookmarks/mock/allow-pass',
+        'app/bookmarks/mock/url-interceptors',
+
+        'app/help/mock/allow-pass-github'         
+      ]
+    }
 
   }
 
@@ -62,20 +96,18 @@ require({
 
 ['require'], function(require) {
 
-  console.log('project require mock config');
+  console.debug('project require mock config');
 
-  console.log(GLOBAL.appModuleDeps);
+  console.debug(GLOBAL.appModuleDeps);
 
   // update app module dependencies array
   GLOBAL.appModuleDeps = GLOBAL.appModuleDeps.concat(['ngMockBackend']);
 
-  console.log(GLOBAL.appModuleDeps);
+  console.debug(GLOBAL.appModuleDeps);
 
   // start
   require([
-    'app/main/mock/allow-pass-jsonp',
-    'app/help/mock/allow-pass-github',
-    'app/bookmarks/resources/mock'
+    'shared/mock/load'
   ]);
 
 });
