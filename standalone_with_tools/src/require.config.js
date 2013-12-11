@@ -34,10 +34,7 @@ require({
     toaster: [
       'vendor/toaster/0.3.0/toaster'
     ],
-
-    flot: [
-      'vendor/flot/0.8.1/jquery.flot','vendor/flot/0.8.1/jquery.flot.pie','vendor/flot/0.8.1/jquery.flot.resize'
-    ]
+    
 
   },
 
@@ -70,11 +67,7 @@ require({
 
     'toaster': {
       deps:['angular_animate']
-    },
-
-    'flot': {
-      deps:['jquery']
-    },
+    },    
 
     'global': {
       deps: ['angular']
@@ -97,7 +90,7 @@ require({
     },
 
     'shared/components/flot-chart/require.config': {
-      deps: ['global','flot']
+      deps: ['global']
     },
 
       //--- app
@@ -139,7 +132,7 @@ require({
     'require.mock.config', // call require mock config
 
     'app/bookmarks/require.config',
-	  'app/indicadores/require.config',
+    'app/indicadores/require.config',
     'app/require.config'
   ]);
 
