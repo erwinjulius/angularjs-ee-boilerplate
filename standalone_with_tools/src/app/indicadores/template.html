@@ -14,12 +14,13 @@
 
   <ul>
     <li>Indicador 1
+      {{chart_data}}
       
 
 <br>
 
     </li>
-    <li>Indicador 2
+    <li>Indicador 2 {{user.dateOfBirth}}
       <ul>
         <li>
           ...
@@ -28,8 +29,9 @@
     </li>
   </ul>
 
+  <p><button ng-click="mockData()">Atualizar Dados</button></p>
   <!-- -->
-  <flot-chart style="height: 250px; padding: 0px; position: relative;" ng-model="chart_data" />
+  <flot-chart id="piechart1" style="height: 250px; padding: 0px; position: relative;" ng-model="chart_data" />
 <!-- -->
 
   
