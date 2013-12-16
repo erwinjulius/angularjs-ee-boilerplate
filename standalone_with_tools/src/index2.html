@@ -1,0 +1,680 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+  <title>Indicador Data Loader</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- css -->
+  <link href="vendor/bootstrap/3.0.2/css/bootstrap.min.css" rel="stylesheet">
+  
+  <script type="text/javascript" src="vendor/jquery/1.10.2/jquery.min.js"></script>
+<script>
+
+var tableToExcel = (function() {
+          var uri = 'data:application/vnd.ms-excel;base64,'
+            , template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--><meta http-equiv="content-type" content="text/plain; charset=UTF-8"/></head><body><table>{table}</table></body></html>'
+            , base64 = function(s) { return window.btoa(unescape(encodeURIComponent(s))) }
+            , format = function(s, c) { return s.replace(/{(\w+)}/g, function(m, p) { return c[p]; }) }
+          return function(table, name) {
+            if (!table.nodeType) table = document.getElementById(table)
+            var ctx = {worksheet: name || 'Worksheet', table: table.innerHTML}
+            window.location.href = uri + base64(format(template, ctx))
+          }
+        })()
+
+  function get_report_data(){
+
+            var v_filter={"start":new Date(jQuery('#id_filter-start_date').val()).toUTCString(),"end":new Date(jQuery('#id_filter-end_date').val()).toUTCString(),"done":true,"domain_id":domain_id,
+                "title":jQuery('#id_filter-title').val(),
+                "company_id":jQuery('#id_filter-company_id').val(),
+                "products":jQuery('#id_filter-products').val(),
+                "user_person":jQuery('#id_filter-professional_id').val(),
+                "line_per_product":true,
+                
+                };
+jQuery(document).ready(function ($) {
+            
+            user_person_select2("id_filter-professional_id");
+
+            $('#id_get_report_data_button').click(function () {
+                get_report_data();
+            });
+            $('#show_report_form').click(function () {
+                show_report_form();
+            });
+            $('#hide_report_form').click(function () {
+                hide_report_form();
+            });
+
+            $('#id_filter-start_date').datetimepicker({
+                controlType: 'select',
+                timeFormat: 'HH:mm',
+                dateFormat: "yy-mm-dd",
+                stepMinute: 15
+            });
+            
+
+            $('#id_filter-end_date').datetimepicker({
+                controlType: 'select',
+                timeFormat: 'HH:mm',
+                dateFormat: "yy-mm-dd",
+                stepMinute: 15
+                
+            });
+            var today=new Date();
+            $('#id_filter-end_date').datepicker("setDate" , today)
+            
+            var newDate= new Date(today);
+            newDate.setDate(newDate.getDate()-30);
+            $('#id_filter-start_date').datepicker("setDate" , newDate)
+
+            products_select2("id_filter-products");
+            company_select2("id_filter-company_id");
+            $("#id_filter-title").select2({
+                placeholder: "Selecione o objetivo",
+                width:"200px",
+                allowClear: true,
+            });
+            
+
+        });
+
+        function show_report_form() {
+            var divname= 'report_view_div_float';
+            jQuery("#"+divname).delay(400).show("slide", { direction: "right" }, 400);
+        }
+
+        function hide_report_form() {
+            var divname= 'report_view_div_float';
+            jQuery("#"+divname ).hide("slide", { direction: "right" }, 400);
+        }
+
+
+        function get_date_string(date){
+            return zerozero(date.getDate()) +"/"+zerozero(date.getMonth()+1)+"/"+date.getFullYear()
+        }
+        
+        function get_report02_data(){
+
+            var v_filter={"start":new Date(jQuery('#rep02-start_date').val()).toUTCString(),"end":new Date(jQuery('#rep02-end_date').val()).toUTCString(),"done":true,"domain_id":domain_id,
+                "user_person":jQuery('#rep02-professional_id').val(),
+                "line_per_product":false,
+                };
+
+            var report_data_request = jQuery.ajax({
+                    type: 'POST',
+                    url: '{% url "sched_mgr_get_occurrence_report" %}',
+                    data: JSON.stringify({ "filter": v_filter }),
+                    beforeSend: function(jqXHR, settings) {
+                        // Pull the token out of the DOM.
+                        jqXHR.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+                    },
+                    contentType: "application/json; charset=utf-8",
+                    async: false,
+                    dataType: "json",
+                });
+                report_data_request.done(function(data) {
+                    //growl("{% trans "Event saved1." %}");
+                    if (data['status']=='ok'){
+                        
+                        // create array of dates selected for report
+                        var date_array=[];
+                        var date = new Date(jQuery('#rep02-start_date').val());
+                        end= new Date(jQuery('#rep02-end_date').val());
+
+                        while (!(get_date_string(date)==get_date_string(end))){
+                            var newDate = new Date(date);
+                            date_array.push(newDate);
+                            date.setDate(date.getDate()+1);
+                        }
+                        //var newDate = new Date(date);
+                        date_array.push(date);
+
+                        //separate events per day
+                        var l_date=null;
+                        var day_events=[]; //grouped events array
+                        var proc_data={}; //processed data for template
+                        var day=0;//defines day for grouped events
+                        var days_lists=[];
+
+                        for (var x = 0; x < date_array.length; x++) {
+                            l_date=date_array[x];
+
+                            for (var i = 0; i < data["list"].length; i++) {
+                                item = data["list"][i];
+                                if (get_date_string(new Date(item["start"])) == get_date_string(l_date)){
+                                    day_events.push(item);
+
+                                }
+                            }
+                            days_lists.push({"day_id":day,"day_events":day_events});
+                            //proc_data["day_"+(day)]=day_events;
+                                    
+                            //l_date=get_date_string( new Date(item["start"]));
+                            day++;
+                            day_events=[]
+
+                        }
+
+                        proc_data = {"dates":date_array,"days_lists":days_lists};
+
+                        //growl("{% trans "Event saved2." %}");
+                        rendered_html= render('calendar/weekly_per_rep', proc_data);
+                        var div = document.getElementById('id_report02_content');
+                        div.innerHTML = rendered_html;
+
+
+                    }else{
+                        alert(data['error'], "Ocorreu um Erro");
+                    }
+                });
+                report_data_request.fail(function(jqXHR, textStatus,errorThrown){
+                    //var msgErro = trataMensagemErro(xmlHttpRequest);
+                    //jError(msgErro, "Ocorreu um Erro");
+                    
+                    alert( "Request failed: " + textStatus );
+                    alert(errorThrown, "Ocorreu um Erro");
+                });
+        }
+
+        function setRep02DateByStart(start_date_text){
+            var start=new Date(start_date_text);
+
+            //bring star to previous sunday
+            if (start.getDay()!=0){
+                start.setDate(start.getDate()-(start.getDay()));
+            }
+            jQuery('#rep02-start_date').datepicker("setDate" , start);
+
+            var newDate= new Date(start);
+            newDate.setDate(newDate.getDate()+6);
+            newDate.setHours(23);
+            newDate.setMinutes(59);
+            jQuery('#rep02-end_date').datepicker("setDate" , newDate);
+        }
+
+        jQuery(document).ready(function ($) {
+
+            user_person_select2("rep02-professional_id");
+
+            $('#print_report_by_rep').click(function () {
+                printDiv("#comercial_report_by_rep_view_div_float");
+            });
+
+            $('#refresh_report_by_rep').click(function () {
+                get_report02_data();
+            });
+
+            $("#rep02-professional_id").change(function(){
+                //clean contact
+                if ($("#rep02-professional_id").val()){
+                    get_report02_data();
+                }else{
+                    var div = document.getElementById('id_report02_content');
+                    div.innerHTML = "";
+                }
+
+            });
+            
+            $('#id_get_report02_data_button').click(function () {
+                get_report02_data();
+            });
+            $('#show_report_by_rep').click(function () {
+                show_report_by_rep();
+            });
+            $('#hide_report_by_rep').click(function () {
+                hide_report_by_rep();
+            });
+
+            $('#rep02-start_date').datetimepicker({
+                controlType: 'select',
+                timeFormat: 'HH:mm',
+                dateFormat: "yy-mm-dd",
+                stepMinute: 15,
+                onSelect: function(dateText, inst){
+                    if(window.console)
+                        console.log(dateText);
+                    setRep02DateByStart(dateText);
+                }
+            });
+            
+
+            $('#rep02-end_date').datetimepicker({
+                controlType: 'select',
+                timeFormat: 'HH:mm',
+                dateFormat: "yy-mm-dd",
+                //stepMinute: 15,
+                onSelect: function(dateText, inst){
+                    if(window.console)
+                        console.log(dateText);
+                    setRep02DateByStart($('#rep02-start_date').val());
+                }
+                
+            });
+            var today=new Date("2013/10/06 00:00");
+            $('#rep02-start_date').datepicker("setDate" , today)
+            
+            var newDate= new Date(today);
+            newDate.setDate(newDate.getDate()+6);
+            newDate.setHours(23);
+            newDate.setMinutes(59);
+            $('#rep02-end_date').datepicker("setDate" , newDate)
+
+            //reps_select2("rep02-professional_id");
+            jQuery('#print_report_by_rep').css( 'cursor', 'pointer' );
+            jQuery('#refresh_report_by_rep').css( 'cursor', 'pointer' );
+
+        });
+
+        function show_report_by_rep() {
+            var divname= 'comercial_report_by_rep_view_div_float';
+            jQuery("#"+divname).delay(400).show("slide", { direction: "right" }, 400);
+        }
+
+        function hide_report_by_rep() {
+            var divname= 'comercial_report_by_rep_view_div_float';
+            jQuery("#"+divname ).hide("slide", { direction: "right" }, 400);
+        }
+            var report_data_request = jQuery.ajax({
+                    type: 'POST',
+                    url: '{% url "sched_mgr_get_occurrence_report" %}',
+                    data: JSON.stringify({ "filter": v_filter }),
+                    beforeSend: function(jqXHR, settings) {
+                        // Pull the token out of the DOM.
+                        jqXHR.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+                    },
+                    contentType: "application/json; charset=utf-8",
+                    async: false,
+                    dataType: "json",
+                });
+                report_data_request.done(function(data) {
+                    //growl("{% trans "Event saved1." %}");
+                    if (data['status']=='ok'){
+                        
+                        //growl("{% trans "Event saved2." %}");
+                        rendered_html= render('calendar/report_02', data);
+                        var div = document.getElementById('id_report_content');
+                        div.innerHTML = rendered_html;
+                    }else{
+                        alert(data['error'], "Ocorreu um Erro");
+                    }
+                });
+                report_data_request.fail(function(jqXHR, textStatus,errorThrown){
+                    //var msgErro = trataMensagemErro(xmlHttpRequest);
+                    //jError(msgErro, "Ocorreu um Erro");
+                    
+                    alert( "Request failed: " + textStatus );
+                    alert(errorThrown, "Ocorreu um Erro");
+                });
+        }
+
+
+  jQuery(document).ready(function ($) {
+            
+            user_person_select2("id_filter-professional_id");
+
+            $('#id_get_report_data_button').click(function () {
+                get_report_data();
+            });
+            $('#show_report_form').click(function () {
+                show_report_form();
+            });
+            $('#hide_report_form').click(function () {
+                hide_report_form();
+            });
+
+            $('#id_filter-start_date').datetimepicker({
+                controlType: 'select',
+                timeFormat: 'HH:mm',
+                dateFormat: "yy-mm-dd",
+                stepMinute: 15
+            });
+            
+
+            $('#id_filter-end_date').datetimepicker({
+                controlType: 'select',
+                timeFormat: 'HH:mm',
+                dateFormat: "yy-mm-dd",
+                stepMinute: 15
+                
+            });
+            var today=new Date();
+            $('#id_filter-end_date').datepicker("setDate" , today)
+            
+            var newDate= new Date(today);
+            newDate.setDate(newDate.getDate()-30);
+            $('#id_filter-start_date').datepicker("setDate" , newDate)
+
+            products_select2("id_filter-products");
+            company_select2("id_filter-company_id");
+            $("#id_filter-title").select2({
+                placeholder: "Selecione o objetivo",
+                width:"200px",
+                allowClear: true,
+            });
+            
+
+        });
+
+        function show_report_form() {
+            var divname= 'report_view_div_float';
+            jQuery("#"+divname).delay(400).show("slide", { direction: "right" }, 400);
+        }
+
+        function hide_report_form() {
+            var divname= 'report_view_div_float';
+            jQuery("#"+divname ).hide("slide", { direction: "right" }, 400);
+        }
+
+
+        function get_date_string(date){
+            return zerozero(date.getDate()) +"/"+zerozero(date.getMonth()+1)+"/"+date.getFullYear()
+        }
+        
+        function get_report02_data(){
+
+            var v_filter={"start":new Date(jQuery('#rep02-start_date').val()).toUTCString(),"end":new Date(jQuery('#rep02-end_date').val()).toUTCString(),"done":true,"domain_id":domain_id,
+                "user_person":jQuery('#rep02-professional_id').val(),
+                "line_per_product":false,
+                };
+
+            var report_data_request = jQuery.ajax({
+                    type: 'POST',
+                    url: '{% url "sched_mgr_get_occurrence_report" %}',
+                    data: JSON.stringify({ "filter": v_filter }),
+                    beforeSend: function(jqXHR, settings) {
+                        // Pull the token out of the DOM.
+                        jqXHR.setRequestHeader('X-CSRFToken', getCookie('csrftoken'));
+                    },
+                    contentType: "application/json; charset=utf-8",
+                    async: false,
+                    dataType: "json",
+                });
+                report_data_request.done(function(data) {
+                    //growl("{% trans "Event saved1." %}");
+                    if (data['status']=='ok'){
+                        
+                        // create array of dates selected for report
+                        var date_array=[];
+                        var date = new Date(jQuery('#rep02-start_date').val());
+                        end= new Date(jQuery('#rep02-end_date').val());
+
+                        while (!(get_date_string(date)==get_date_string(end))){
+                            var newDate = new Date(date);
+                            date_array.push(newDate);
+                            date.setDate(date.getDate()+1);
+                        }
+                        //var newDate = new Date(date);
+                        date_array.push(date);
+
+                        //separate events per day
+                        var l_date=null;
+                        var day_events=[]; //grouped events array
+                        var proc_data={}; //processed data for template
+                        var day=0;//defines day for grouped events
+                        var days_lists=[];
+
+                        for (var x = 0; x < date_array.length; x++) {
+                            l_date=date_array[x];
+
+                            for (var i = 0; i < data["list"].length; i++) {
+                                item = data["list"][i];
+                                if (get_date_string(new Date(item["start"])) == get_date_string(l_date)){
+                                    day_events.push(item);
+
+                                }
+                            }
+                            days_lists.push({"day_id":day,"day_events":day_events});
+                            //proc_data["day_"+(day)]=day_events;
+                                    
+                            //l_date=get_date_string( new Date(item["start"]));
+                            day++;
+                            day_events=[]
+
+                        }
+
+                        proc_data = {"dates":date_array,"days_lists":days_lists};
+
+                        //growl("{% trans "Event saved2." %}");
+                        rendered_html= render('calendar/weekly_per_rep', proc_data);
+                        var div = document.getElementById('id_report02_content');
+                        div.innerHTML = rendered_html;
+
+
+                    }else{
+                        alert(data['error'], "Ocorreu um Erro");
+                    }
+                });
+                report_data_request.fail(function(jqXHR, textStatus,errorThrown){
+                    //var msgErro = trataMensagemErro(xmlHttpRequest);
+                    //jError(msgErro, "Ocorreu um Erro");
+                    
+                    alert( "Request failed: " + textStatus );
+                    alert(errorThrown, "Ocorreu um Erro");
+                });
+        }
+
+        function setRep02DateByStart(start_date_text){
+            var start=new Date(start_date_text);
+
+            //bring star to previous sunday
+            if (start.getDay()!=0){
+                start.setDate(start.getDate()-(start.getDay()));
+            }
+            jQuery('#rep02-start_date').datepicker("setDate" , start);
+
+            var newDate= new Date(start);
+            newDate.setDate(newDate.getDate()+6);
+            newDate.setHours(23);
+            newDate.setMinutes(59);
+            jQuery('#rep02-end_date').datepicker("setDate" , newDate);
+        }
+
+        jQuery(document).ready(function ($) {
+
+            user_person_select2("rep02-professional_id");
+
+            $('#print_report_by_rep').click(function () {
+                printDiv("#comercial_report_by_rep_view_div_float");
+            });
+
+            $('#refresh_report_by_rep').click(function () {
+                get_report02_data();
+            });
+
+            $("#rep02-professional_id").change(function(){
+                //clean contact
+                if ($("#rep02-professional_id").val()){
+                    get_report02_data();
+                }else{
+                    var div = document.getElementById('id_report02_content');
+                    div.innerHTML = "";
+                }
+
+            });
+            
+            $('#id_get_report02_data_button').click(function () {
+                get_report02_data();
+            });
+            $('#show_report_by_rep').click(function () {
+                show_report_by_rep();
+            });
+            $('#hide_report_by_rep').click(function () {
+                hide_report_by_rep();
+            });
+
+            $('#rep02-start_date').datetimepicker({
+                controlType: 'select',
+                timeFormat: 'HH:mm',
+                dateFormat: "yy-mm-dd",
+                stepMinute: 15,
+                onSelect: function(dateText, inst){
+                    if(window.console)
+                        console.log(dateText);
+                    setRep02DateByStart(dateText);
+                }
+            });
+            
+
+            $('#rep02-end_date').datetimepicker({
+                controlType: 'select',
+                timeFormat: 'HH:mm',
+                dateFormat: "yy-mm-dd",
+                //stepMinute: 15,
+                onSelect: function(dateText, inst){
+                    if(window.console)
+                        console.log(dateText);
+                    setRep02DateByStart($('#rep02-start_date').val());
+                }
+                
+            });
+            var today=new Date("2013/10/06 00:00");
+            $('#rep02-start_date').datepicker("setDate" , today)
+            
+            var newDate= new Date(today);
+            newDate.setDate(newDate.getDate()+6);
+            newDate.setHours(23);
+            newDate.setMinutes(59);
+            $('#rep02-end_date').datepicker("setDate" , newDate)
+
+            //reps_select2("rep02-professional_id");
+            jQuery('#print_report_by_rep').css( 'cursor', 'pointer' );
+            jQuery('#refresh_report_by_rep').css( 'cursor', 'pointer' );
+
+        });
+
+        function show_report_by_rep() {
+            var divname= 'comercial_report_by_rep_view_div_float';
+            jQuery("#"+divname).delay(400).show("slide", { direction: "right" }, 400);
+        }
+
+        function hide_report_by_rep() {
+            var divname= 'comercial_report_by_rep_view_div_float';
+            jQuery("#"+divname ).hide("slide", { direction: "right" }, 400);
+        }
+
+</script>
+
+</head>
+<body>
+
+<!-- Wrap all page content here -->
+<div id="wrap">
+
+  <!-- app content -->
+  <div class="container">
+
+
+<!-- STAnRT View Report -->
+  <script>
+    
+    </script>
+
+  <div id="report_view_div_float">
+    <table id="float_form_div_inside">
+        <tr>
+          <td style="width: 1%; vertical-align: top;">
+        
+          <div id="hide_report_form" class="hide_float"></div>
+          </td>
+            <td>
+        
+        <div id="float_form_div">
+            <div class="title"><h2 class="tabbed floated_form"><span>Relatório de Atendimentos Realizados</span></h2></div>
+            <div id="report_filter">
+              <div class="uplabel_field_div">
+                    <div class="uplabel_label">Início</div>
+                    <div class="uplabel_field_no_select2"><input class="date_widget" id="id_filter-start_date" type="text" value="2013-10-01 00:00"></div>
+                </div>
+                <div class="uplabel_field_div">
+                    <div class="uplabel_label">Término</div>
+                    <div class="uplabel_field_no_select2"><input class="date_widget" id="id_filter-end_date" type="text" value="2013-10-23 00:00"></div>
+                </div>
+                <div class="uplabel_field_div">
+                    <div class="uplabel_label">Produto</div>
+                    <div class="uplabel_field"><input type="hidden" id="id_filter-products" style="width:200px"></div>
+                </div>
+            </div>
+            <div id="report_filter">
+                <div class="uplabel_field_div">
+                    <div class="uplabel_label">Empresa</div>
+                    <div class="uplabel_field"><input type="hidden" id="id_filter-company_id" style="width:200px"></div>
+                </div>
+                <div class="uplabel_field_div">
+                    <div class="uplabel_label">Objetivo</div>
+                    <div class="uplabel_field_no_select2"><select id="id_filter-title" name="event_form-title">
+                            <option value=""></option>
+                            <option value="Fazer apresentação">Fazer 1a apresentação</option>
+                            <option value="Treinamento">Treinamento</option>
+                            <option value="Negociação">Negociação</option>
+                            <option value="Manutenção/Relacionamento">Manutenção/Relacionamento</option>
+                            <option value="Reunião com diretoria">Reunião com diretoria</option>
+                            </select></div>
+                </div>
+                <div class="uplabel_field_div">
+                    <div class="uplabel_label">Selecione o representante</div>
+                    <div class="uplabel_field"><input type="hidden" id="id_filter-professional_id" style="width:200px"></div>
+                </div>
+                <div class="uplabel_field_no_select2"><input id="id_get_report_data_button" value="{% trans "Carregar dados" %}" type="button"></div>
+            </div>
+            
+            <div id="id_report_content" style="width:100%">
+
+            </div>
+
+        </div>
+      </td>
+        </tr>
+        </table>
+    </div><!--report_view_div_float-->
+<!-- END View Report -->
+
+
+    <div class="table-responsive">
+      <div class="uplabel_field_no_select2"><input type="button" class="table_tool" onclick="tableToExcel('report_table', 'Relatório de Atendimentos')" value="Exportar para Excel"></div>
+      <table id="report_table" class="table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Duração(h)</th>
+            <th>Nome</th>
+            <th>Empresa</th>
+            <th>Produtos</th>
+            <th>Mat. Cientifico</th>
+            <th>Brindes</th>
+            <th>Folhetos</th>
+            <th>Amostras</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each list}}
+          <tr>
+            <td>{{ prettifyDate start }}</td>
+            <td>{{ duration_hour }}</td>
+            <td>{{ person.name }}</td>
+            <td>{{ company.name }}</td>
+            <td>{{ product.name }}</td>
+            <td>{{ resource-mat_cientifico }}</td>
+            <td>{{ resource-brinde }}</td>
+            <td>{{ resource-folheto }}</td>
+            <td>{{ resource-amostra }}</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+      <div class="uplabel_field_no_select2"><input type="button" class="table_tool" onclick="tableToExcel('report_table', 'Relatório de Atendimentos')" value="Exportar para Excel"></div>
+    </div>
+
+  </div>  
+
+</div>
+
+
+</body>
+</html>
