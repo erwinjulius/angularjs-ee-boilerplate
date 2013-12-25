@@ -1,0 +1,28 @@
+<div class="table-responsive">
+    <div class="uplabel_field_no_select2"><input type="button" class="table_tool" onclick="tableToExcel('report_table', 'Relatório de Indicadores')" value="Exportar para Excel"></div>
+    <table id="report_table" class="table">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>ocorrencia</th>
+          <th>indicador</th>
+          <th>demanda</th>
+          <th>unidade</th>
+          <th>identificador_demanda</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each .}}
+        <tr>
+          <td>{{ dateTimeISODate dataValorIndicador }}</td>
+          <td>1</td>
+          <td>{{ indicador.nomeIndicador }}</td>
+          <td>{{ estruturaIndicador.id }}</td>
+          <td>{{ estruturaIndicador.identificadorDemanda }}</td>
+          <td>{{ estruturaIndicador.nomeUnidadeOrganizacional }}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    <div class="uplabel_field_no_select2"><input type="button" class="table_tool" onclick="tableToExcel('report_table', 'Relatório de Indicadores')" value="Exportar para Excel"></div>
+</div> 
