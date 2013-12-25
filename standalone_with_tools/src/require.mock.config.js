@@ -59,6 +59,10 @@ require({
     'app/bookmarks/mock/allow-pass': {
       deps: ['angular-mocks-backend']
     },
+	
+	'app/indicadores/mock/allow-pass': {
+      deps: ['angular-mocks-backend']
+    },
 
     //--- @end: allow pass to server
 
@@ -70,9 +74,20 @@ require({
         'shared/mock/helpers'
       ]
     },
+	
+	'app/indicadores/mock/data': {
+      deps: [
+        'shared/mock/in-memory.db',
+        'shared/mock/helpers'
+      ]
+    },
 
     'app/bookmarks/mock/url-interceptors': {
       deps: ['app/bookmarks/mock/data']
+    },
+	
+	'app/indicadores/mock/url-interceptors': {
+      deps: ['app/indicadores/mock/data']
     },
 
     //--- @end: mocks
@@ -85,6 +100,9 @@ require({
 
         //'app/bookmarks/mock/allow-pass',
         'app/bookmarks/mock/url-interceptors',
+		
+		//'app/indicadores/mock/allow-pass',
+        'app/indicadores/mock/url-interceptors',
 
         'app/help/mock/allow-pass-github'         
       ]

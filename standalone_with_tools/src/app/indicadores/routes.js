@@ -14,6 +14,13 @@ function ($routeProvider) {
         templateUrl: 'app/indicadores/template.html'
       }
     )
+    .when(
+      '/indicadores/json',
+      {
+        controller: 'IndicadoresJsonCtrl',
+        templateUrl: 'app/indicadores/templates/json.html'
+      }
+    )
     
   ;
 

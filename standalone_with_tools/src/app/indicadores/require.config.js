@@ -9,12 +9,16 @@ require({
       deps: [
         'angular_route', 
         'angular_resource',
-        'shared/components/flot-chart/module'
+        'shared/components/flot-chart/module',
+        'shared/components/pagination/module'
         
       ]
     },
 
     //--- @begin resources
+    'app/indicadores/resources/rest': {
+      deps: ['app/indicadores/module']
+    },
 
 
     //--- @end resources
@@ -28,11 +32,16 @@ require({
     
     } ,
 
+    'app/indicadores/controllers/json': {
+      deps: ['app/indicadores/resources/rest']
+    },
+
     //--- @end controllers
 
     'app/indicadores/routes': {
       deps: [ 
-        'app/indicadores/controller'
+        'app/indicadores/controller',
+        'app/indicadores/controllers/json'
       ]
     
     } 
